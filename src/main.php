@@ -9,9 +9,9 @@
         // Establish database connection
         $db = new SQLite3('question.sq3');
         //Create table for messages
-        $db->exec("CREATE TABLE IF NOT EXISTS messages(content text, timestamp text, userid text);");
+        $db->exec("CREATE TABLE IF NOT EXISTS messages(content text, timestamp text, userid textt, followeronly boolean);");
         //Create table for users
-        $db->exec("CREATE TABLE IF NOT EXISTS users(username text primary key, email text, password text);");
+        $db->exec("CREATE TABLE IF NOT EXISTS users(username text primary key, email text unique, password text);");
         //checks if user wants to logout
         if(isset($_POST["logout"]))
         {
@@ -52,7 +52,7 @@
         if(isset($_POST["content"]) && isset($_POST["userid"]))
         {
             //inserts message info into table
-            $db->exec("insert into messages values (\"" . $_POST["content"] . "\",\"". time() . "\", \"" . $_POST["userid"] . "\");");
+            $db->exec("insert into messages values (\"" . $_POST["content"] . "\",\"". time() . "\", \"" . $_POST["userid"] . "\",\"". $_POST["followeronly"] . "\");");
         }
         //if user is not logged in and does not want to register
         if(!isset($_COOKIE["userid"]) && !isset($_POST["register"]))
@@ -91,7 +91,7 @@
         if(isset($_COOKIE["userid"]))
         {
             //takes all the messages as well as the username by joining on id
-            $allInputQuery = "SELECT messages.content, users.username, messages.timestamp FROM messages JOIN users ON messages.userid = users.rowid ORDER BY messages.timestamp DESC"; 
+            $allInputQuery = "SELECT messages.content, messages.followeronly, users.username, messages.timestamp FROM messages JOIN users ON messages.userid = users.rowid ORDER BY messages.timestamp DESC"; 
             $messages = $db->query($allInputQuery); 
             echo "<hr>";
             //displays the messages inside the box
@@ -113,6 +113,8 @@
             <form method=\"post\" action=\"#\">
             <textarea name=\"content\" rows=\"4\" cols=\"50\"></textarea><br>
             <input type=\"hidden\" name=\"userid\" value=\"" . $_COOKIE["userid"] . "\">
+            <input type=\"hidden\" name=\"followeronly\" value=\"off\">
+            Follower only<input type=\"checkbox\" name=\"followeronly\">
             <input type=\"submit\" value=\"Post\">
             </form>";
             //logout button
