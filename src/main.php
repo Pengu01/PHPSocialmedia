@@ -11,7 +11,7 @@
         //Create table for messages
         $db->exec("CREATE TABLE IF NOT EXISTS messages(content text, timestamp text, userid textt, followeronly boolean);");
         //Create table for users
-        $db->exec("CREATE TABLE IF NOT EXISTS users(username text primary key, email text unique, password text);");
+        $db->exec("CREATE TABLE IF NOT EXISTS users(username text primary key, email text unique, password text, followlist text);");
         //checks if user wants to logout
         if(isset($_POST["logout"]))
         {
@@ -90,16 +90,26 @@
         //If you are logged in 
         if(isset($_COOKIE["userid"]))
         {
+            $allInputQuery = "SELECT users.followlist FROM users where users.rowid = \"".$_COOKIE["userid"]."\""; 
+            $followsss = $db->query($allInputQuery); 
+            while($row = $followsss->fetchArray(SQLITE3_ASSOC))
+            {
+                $followss = $row['followlist'];
+            }
+            $follows = explode("-",$followss);
             //takes all the messages as well as the username by joining on id
-            $allInputQuery = "SELECT messages.content, messages.followeronly, users.username, messages.timestamp FROM messages JOIN users ON messages.userid = users.rowid ORDER BY messages.timestamp DESC"; 
+            $allInputQuery = "SELECT messages.content, messages.followeronly, users.username, messages.timestamp, users.rowid FROM messages JOIN users ON messages.userid = users.rowid ORDER BY messages.timestamp DESC"; 
             $messages = $db->query($allInputQuery); 
             echo "<hr>";
             //displays the messages inside the box
             while($row = $messages->fetchArray(SQLITE3_ASSOC))
             {
-                echo "<b>" . $row['username'] . ":</b> " . $row['content'] . "<br>";
-                echo "<small>" . date("Y-m-d H:i",$row['timestamp']) . "</small>";
-                echo "<hr>";
+                if($row['followeronly'] == "off" || in_array($row['rowid'], $follows) || $row['rowid'] == $_COOKIE["userid"])
+                {
+                    echo "<b>" . $row['username'] . ":</b> " . $row['content'] . "<br>";
+                    echo "<small>" . date("Y-m-d H:i",$row['timestamp']) . "</small>";
+                    echo "<hr>";
+                }
             }
         }
     ?>
