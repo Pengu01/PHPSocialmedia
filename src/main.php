@@ -54,6 +54,56 @@
             //inserts message info into table
             $db->exec("insert into messages values (\"" . $_POST["content"] . "\",\"". time() . "\", \"" . $_POST["userid"] . "\",\"". $_POST["followeronly"] . "\");");
         }
+        //if user wants to follow
+        if(isset($_POST["followuser"]))
+        {
+            //takes the id of the account the user wants to follow
+            $allInputQuery = "SELECT users.rowid FROM users where users.username = \"".$_POST["followuser"]."\""; 
+            $rowidd = $db->query($allInputQuery); 
+            while($row = $rowidd->fetchArray(SQLITE3_ASSOC))
+            {
+                $rowid = $row['rowid'];
+            }
+            //gets the users followlist
+            $allInputQuery = "SELECT users.followlist FROM users where users.rowid = \"".$_COOKIE["userid"]."\""; 
+            $rowidd = $db->query($allInputQuery); 
+            while($row = $rowidd->fetchArray(SQLITE3_ASSOC))
+            {
+                $followlist = $row['followlist'];
+            }
+            //makes it into an array
+            $tempfollowlist = explode("-",$followlist);
+            //checks if user is already following or they dont exist
+            if(isset($rowid) && !in_array($rowid, $tempfollowlist))
+            {
+                //adds the user into the follow list
+                $db->exec("update users set followlist = \"". $followlist . "-". $rowid . "\" where users.rowid = \"".$_COOKIE["userid"]."\"");
+            }
+        }
+        //if user wants to unfollow
+        if(isset($_POST["unfollowuser"]))
+        {
+            //finds users followlist
+            $allInputQuery = "SELECT users.followlist FROM users where users.rowid = \"".$_COOKIE["userid"]."\""; 
+            $rowidd = $db->query($allInputQuery); 
+            while($row = $rowidd->fetchArray(SQLITE3_ASSOC))
+            {
+                $followlist = $row['followlist'];
+            }
+            //makes it into an array
+            $tempfollowlist = explode("-",$followlist);
+            foreach($tempfollowlist as $userid)
+            {
+                //ckecks if it is the account that the user wants to unfollow
+                if($_POST["unfollowuser"] != $userid)
+                {
+                    //if not it gets added back
+                    $sfollowlist = "-".$userid;
+                }
+            }
+            //adds all the accounts the user did not want to unfollow back
+            $db->exec("update users set followlist = \"".$sfollowlist."\" where users.rowid = \"".$_COOKIE["userid"]."\"");
+        }
         //if user is not logged in and does not want to register
         if(!isset($_COOKIE["userid"]) && !isset($_POST["register"]))
         {
@@ -85,17 +135,19 @@
         }
         ?>
         <!-- this makes the message window not go forever, instead it limits it to a box and adds a scroll so that you can browse them without taking up the entire screen -->
-        <div style="overflow-y: scroll; word-wrap: break-word; height:60vh">
+        <div style="overflow-y: scroll; word-wrap: break-word; height:50vh">
         <?php
         //If you are logged in 
         if(isset($_COOKIE["userid"]))
         {
+            //gets the users followerlist
             $allInputQuery = "SELECT users.followlist FROM users where users.rowid = \"".$_COOKIE["userid"]."\""; 
             $followsss = $db->query($allInputQuery); 
             while($row = $followsss->fetchArray(SQLITE3_ASSOC))
             {
                 $followss = $row['followlist'];
             }
+            //makes it into an array
             $follows = explode("-",$followss);
             //takes all the messages as well as the username by joining on id
             $allInputQuery = "SELECT messages.content, messages.followeronly, users.username, messages.timestamp, users.rowid FROM messages JOIN users ON messages.userid = users.rowid ORDER BY messages.timestamp DESC"; 
@@ -104,6 +156,7 @@
             //displays the messages inside the box
             while($row = $messages->fetchArray(SQLITE3_ASSOC))
             {
+                //checks if they are allowed to read it
                 if($row['followeronly'] == "off" || in_array($row['rowid'], $follows) || $row['rowid'] == $_COOKIE["userid"])
                 {
                     echo "<b>" . $row['username'] . ":</b> " . $row['content'] . "<br>";
@@ -126,11 +179,50 @@
             <input type=\"hidden\" name=\"followeronly\" value=\"off\">
             Follower only<input type=\"checkbox\" name=\"followeronly\">
             <input type=\"submit\" value=\"Post\">
-            </form>";
+            </form><br>";
             //logout button
             echo "<form method=\"post\" action=\"#\">
             Logout:<input type=\"submit\" value=\"Logout\" name=\"logout\">
-            </form>";
+            </form><br>";
+            echo "Follow a user:
+            <form method=\"post\" action=\"#\">
+            <input type=\"text\" name=\"followuser\">
+            <input type=\"submit\" value=\"Follow\">
+            </form><br>";
+            //gets users follower list
+            $allInputQuery = "SELECT users.followlist FROM users where users.rowid = \"".$_COOKIE["userid"]."\""; 
+            $followsss = $db->query($allInputQuery); 
+            while($row = $followsss->fetchArray(SQLITE3_ASSOC))
+            {
+                $followss = $row['followlist'];
+            }
+            //makes it into an array and cleans it up
+            $follows = explode("-",$followss);
+            $follows = array_filter($follows);
+            //if you are following more than 0
+            if(count($follows) > 0)
+            {
+                //shot unfollow select screen
+                echo "Unfollow a user:
+                <form method=\"post\" action=\"#\">
+                <select name=\"unfollowuser\">";
+                //displays all followin in dropdown
+                foreach($follows as $unfollows)
+                {
+                    //gets their name from id
+                    $allInputQuery = "SELECT users.username FROM users where users.rowid = \"".$unfollows."\""; 
+                    $usernamelist = $db->query($allInputQuery); 
+                    while($row = $usernamelist->fetchArray(SQLITE3_ASSOC))
+                    {
+                        //shows them as dropdown menu with id as value
+                        echo "<option value=\"". $unfollows . "\">". $row['username'] ."</option>";
+                    }
+                }   
+                //submit button
+                echo "</select>
+                <input type=\"submit\" value=\"Unfollow\">
+                </form>";
+            }
         }
     ?>
 </body>
