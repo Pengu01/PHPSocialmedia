@@ -9,7 +9,7 @@
         // Establish database connection
         $db = new SQLite3('question.sq3');
         //Create table for messages
-        $db->exec("CREATE TABLE IF NOT EXISTS messages(content text, timestamp text, userid textt, followeronly boolean);");
+        $db->exec("CREATE TABLE IF NOT EXISTS messages(content text, timestamp text, userid textt, followeronly boolean, direct int);");
         //Create table for users
         $db->exec("CREATE TABLE IF NOT EXISTS users(username text primary key, email text unique, password text, followlist text);");
         //checks if user wants to logout
@@ -52,7 +52,7 @@
         if(isset($_POST["content"]) && isset($_POST["userid"]))
         {
             //inserts message info into table
-            $db->exec("insert into messages values (\"" . $_POST["content"] . "\",\"". time() . "\", \"" . $_POST["userid"] . "\",\"". $_POST["followeronly"] . "\");");
+            $db->exec("insert into messages values (\"" . $_POST["content"] . "\",\"". time() . "\", \"" . $_POST["userid"] . "\",\"". $_POST["followeronly"] . "\",\"". $_POST["direct"] . "\");");
         }
         //if user wants to follow
         if(isset($_POST["followuser"]))
@@ -150,18 +150,62 @@
             //makes it into an array
             $follows = explode("-",$followss);
             //takes all the messages as well as the username by joining on id
-            $allInputQuery = "SELECT messages.content, messages.followeronly, users.username, messages.timestamp, users.rowid FROM messages JOIN users ON messages.userid = users.rowid ORDER BY messages.timestamp DESC"; 
+            $allInputQuery = "SELECT messages.content, messages.followeronly, users.username, messages.timestamp, users.rowid, messages.direct FROM messages JOIN users ON messages.userid = users.rowid ORDER BY messages.timestamp DESC"; 
             $messages = $db->query($allInputQuery); 
             echo "<hr>";
             //displays the messages inside the box
             while($row = $messages->fetchArray(SQLITE3_ASSOC))
             {
                 //checks if they are allowed to read it
-                if($row['followeronly'] == "off" || in_array($row['rowid'], $follows) || $row['rowid'] == $_COOKIE["userid"])
+                if($row['rowid'] == $_COOKIE["userid"])
                 {
+                    //you sent it as a direct message
+                    if($row['direct'] != '-1')
+                    {
+                        $message = $db->query("select users.username from users where rowid = '". $row['direct'] ."'"); 
+                        echo "<b>" . $row['username'] . " -> ". $message->fetchArray(SQLITE3_ASSOC)['username'] . ":</b> " . $row['content'] . "<br>";
+                        echo "<small>" . date("Y-m-d H:i",$row['timestamp']) . "</small>";
+                        echo "<hr>";
+                        continue;
+                    }
+                    //you sent it as a followers only message
+                    if($row['followeronly'] != "off")
+                    {
+                        echo "🔒 <b>" . $row['username'] . ":</b> " . $row['content'] . "<br>";
+                        echo "<small>" . date("Y-m-d H:i",$row['timestamp']) . "</small>";
+                        echo "<hr>";
+                        continue;
+                    }
+                    //you sent it as a normal message
                     echo "<b>" . $row['username'] . ":</b> " . $row['content'] . "<br>";
                     echo "<small>" . date("Y-m-d H:i",$row['timestamp']) . "</small>";
                     echo "<hr>";
+                    continue;
+                }
+                if($row['followeronly'] == "off" && $row['direct'] == '-1')
+                {
+                    //everyone can see it
+                    echo "<b>" . $row['username'] . ":</b> " . $row['content'] . "<br>";
+                    echo "<small>" . date("Y-m-d H:i",$row['timestamp']) . "</small>";
+                    echo "<hr>";
+                    continue;
+                }
+                if(in_array($row['rowid'], $follows) && $row['direct'] == '-1')
+                {
+                    //following only message
+                    echo "🔒 <b>" . $row['username'] . ":</b> " . $row['content'] . "<br>";
+                    echo "<small>" . date("Y-m-d H:i",$row['timestamp']) . "</small>";
+                    echo "<hr>";
+                    continue;
+                }
+                if($row['direct'] == $_COOKIE['userid'])
+                {
+                    //direct message
+                    $message = $db->query("select users.username from users where rowid = '". $row['direct'] ."'"); 
+                    echo "<b>" . $row['username'] . " -> ". $message->fetchArray(SQLITE3_ASSOC)['username'] . ":</b> " . $row['content'] . "<br>";
+                    echo "<small>" . date("Y-m-d H:i",$row['timestamp']) . "</small>";
+                    echo "<hr>";
+                    continue;
                 }
             }
         }
@@ -178,6 +222,16 @@
             <input type=\"hidden\" name=\"userid\" value=\"" . $_COOKIE["userid"] . "\">
             <input type=\"hidden\" name=\"followeronly\" value=\"off\">
             Follower only<input type=\"checkbox\" name=\"followeronly\">
+            <select name=\"direct\">
+            <option value=\"-1\">All</option>";
+            $allInputQuery = "SELECT users.username, users.rowid FROM users"; 
+            $usernamelist = $db->query($allInputQuery); 
+            while($row = $usernamelist->fetchArray(SQLITE3_ASSOC))
+            {
+                //shows them as dropdown menu with id as value
+                echo "<option value=\"". $row['rowid'] . "\">". $row['username'] ."</option>";
+            }
+            echo "</select>
             <input type=\"submit\" value=\"Post\">
             </form><br>";
             //logout button
@@ -218,7 +272,7 @@
                         echo "<option value=\"". $unfollows . "\">". $row['username'] ."</option>";
                     }
                 }   
-                //submit button
+                //submit button5
                 echo "</select>
                 <input type=\"submit\" value=\"Unfollow\">
                 </form>";
