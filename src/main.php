@@ -52,7 +52,12 @@
         if(isset($_POST["content"]) && isset($_POST["userid"]))
         {
             //inserts message info into table
-            $db->exec("insert into messages values (\"" . $_POST["content"] . "\",\"". time() . "\", \"" . $_POST["userid"] . "\",\"". $_POST["followeronly"] . "\",\"". $_POST["direct"] . "\");");
+            $words = array("Bord", "Stol", "B0rd", "St0l", "St01", "Sto1");
+            $content = $_POST["content"];
+            foreach ($words as $word) {
+                $content = str_ireplace($word, str_repeat("*",strlen($word)),  $content);
+            }
+            $db->exec("insert into messages values (\"" . $content . "\",\"". time() . "\", \"" . $_POST["userid"] . "\",\"". $_POST["followeronly"] . "\",\"". $_POST["direct"] . "\");");
         }
         //if user wants to follow
         if(isset($_POST["followuser"]))
