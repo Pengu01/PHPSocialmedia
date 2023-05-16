@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Chrip</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h1>Chrip</h1>
@@ -10,7 +11,7 @@
         $db = new SQLite3('question.sq3');
         //Create table for messages
         $db->exec("CREATE TABLE IF NOT EXISTS messages(content text, timestamp text, userid textt, followeronly boolean, direct int);");
-        //Create table for users
+        //Create table for usersd
         $db->exec("CREATE TABLE IF NOT EXISTS users(username text primary key, email text unique, password text, followlist text);");
         //checks if user wants to logout
         if(isset($_POST["logout"]))
@@ -113,35 +114,39 @@
         //if user is not logged in and does not want to register
         if(!isset($_COOKIE["userid"]) && !isset($_POST["register"]))
         {
+            echo "<div class=\"loginbox\">";
             //shows login form
-            echo "<h3>Login:</h3>
+            echo "<h3 class=\"logintitle\">Login</h3>
             <form method=\"post\" action=\"#\">
-            Name: <input type=\"text\" name=\"name\"><br>
-            Password: <input type=\"text\" name=\"password\"> <br>
-            <input type=\"submit\" value=\"Login\">
+            <p class=\"logintext\">Name: </p><br><input class=\"textinput\" type=\"text\" name=\"name\"><br>
+            <p class=\"logintext\">Password: </p><br><input class=\"textinput\" type=\"text\" name=\"password\"> <br><br>
+            <input type=\"submit\" class=\"loginbutton\" value=\"Login\">
             </form><br>";
             //register button
-            echo "<form method=\"post\" action=\"#\"> I want to register:<input type=\"submit\" value=\"Register\" name=\"register\">
-            </form>";
+            echo "<form method=\"post\" action=\"#\"><input class=\"submitbutton\" type=\"submit\" value=\"Register\" name=\"register\">
+            </form><br>";
+            echo "</div>";
         }
         //if user wants to register
         if(isset($_POST["register"]))
         {
+            echo "<div class=\"loginbox\">";
             //register form
-            echo "<h3>Register:</h3>
+            echo "<h3 class=\"logintitle\">Register:</h3>
             <form method=\"post\" action=\"#\">
-            Name: <input type=\"text\" name=\"regname\"><br>
-            Email: <input type=\"text\" name=\"regmail\"><br>
-            Password: <input type=\"text\" name=\"regpassword\"> <br>
-            <input type=\"submit\" value=\"Register\">
-            </form>";
+            <p class=\"logintext\">Name: </p><br> <input class=\"textinput\" type=\"text\" name=\"regname\"><br>
+            <p class=\"logintext\">Email: </p><br> <input class=\"textinput\" type=\"text\" name=\"regmail\"><br>
+            <p class=\"logintext\">Password: </p><br> <input class=\"textinput\" type=\"text\" name=\"regpassword\"> <br><br>
+            <input type=\"submit\" value=\"Register\" class=\"loginbutton\">
+            </form><br>";
             //login button
-            echo "<form method=\"post\" action=\"#\"> I want to login:<input type=\"submit\" value=\"Login\">
-            </form>";
+            echo "<form method=\"post\" action=\"#\"><input class=\"submitbutton\" type=\"submit\" value=\"Login\">
+            </form><br>";
+            echo "</div>";
         }
         ?>
         <!-- this makes the message window not go forever, instead it limits it to a box and adds a scroll so that you can browse them without taking up the entire screen -->
-        <div style="overflow-y: scroll; word-wrap: break-word; height:50vh">
+        <div class="chatbox">
         <?php
         //If you are logged in 
         if(isset($_COOKIE["userid"]))
@@ -235,7 +240,7 @@
             while($row = $usernamelist->fetchArray(SQLITE3_ASSOC))
             {
                 //shows them as dropdown menu with id as value
-                echo "<option value=\"". $row['rowid'] . "\">". $row['username'] ."</option>";
+                if($row['rowid'] != $_COOKIE['userid'])echo "<option value=\"". $row['rowid'] . "\">". $row['username'] ."</option>";
             }
             echo "</select>
             <input type=\"submit\" value=\"Post\">
