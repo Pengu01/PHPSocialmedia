@@ -52,13 +52,14 @@
         //if user want to send message
         if(isset($_POST["content"]) && isset($_POST["userid"]))
         {
-            //inserts message info into table
+            //censors the words bord and stol by replacing them with *
             $words = array("Bord", "Stol", "B0rd", "St0l", "St01", "Sto1");
             $content = $_POST["content"];
             foreach ($words as $word) 
             {
                 $content = str_ireplace($word, str_repeat("*",strlen($word)),  $content);
             }
+            //inserts message info into table
             $db->exec("insert into messages values (\"" . $content . "\",\"". time() . "\", \"" . $_POST["userid"] . "\",\"". $_POST["followeronly"] . "\",\"". $_POST["direct"] . "\");");
         }
         //if user wants to follow
@@ -130,9 +131,9 @@
         //if user wants to register
         if(isset($_POST["register"]))
         {
-            echo "<div class=\"loginbox\">";
+            echo "<div class=\"loginbox\" style=\"padding-bottom: 140px; margin-bottom: 0px;\">";
             //register form
-            echo "<h3 class=\"logintitle\">Register:</h3>
+            echo "<h3 class=\"logintitle\">Register</h3>
             <form method=\"post\" action=\"#\">
             <p class=\"logintext\">Name: </p><br> <input class=\"textinput\" type=\"text\" name=\"regname\"><br>
             <p class=\"logintext\">Email: </p><br> <input class=\"textinput\" type=\"text\" name=\"regmail\"><br>

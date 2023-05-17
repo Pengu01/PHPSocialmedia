@@ -1,5 +1,5 @@
 .chatbox{
-    overflow-y: scroll; 
+    overflow-y: auto; 
     word-wrap: break-word; 
     height:50vh;
 }
@@ -9,8 +9,11 @@
     margin: auto;
     margin-top: 100px;
     border: 3px solid black;
-    min-height: 200px;
+    height: 200px;
     border-radius: 10px;
+    align-items: center;
+    padding-bottom: 90px;
+    margin-bottom: 50px;
 }
 .logintext{
     text-align: left;
